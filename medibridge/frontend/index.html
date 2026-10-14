@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediBridge AI — Prescription Vision & Patient Safety</title>
+  <meta name="description" content="AI-powered prescription photo scanner that creates structured, safety-audited, plain-language care plans with audio reminders.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Header / Nav -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M2 12h20"/>
+            <circle cx="12" cy="12" r="9" stroke-width="1.5" stroke-dasharray="3 3"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <div class="brand-title">MediBridge <span class="ai-badge">AI</span></div>
+          <div class="brand-subtitle">Vision-to-Care Plan & Safety Engine</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="status-indicator" id="apiStatusBadge">
+          <span class="status-dot"></span>
+          <span id="apiStatusText">Checking Backend...</span>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="demoModeToggle" title="Toggle Mock Demo for offline / instant testing">
+          <span class="demo-pill">DEMO MODE</span>
+          <span id="demoModeLabel">Off</span>
+        </button>
+        <button type="button" class="btn btn-icon btn-secondary" id="configModalBtn" title="API Settings">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-container">
+    <!-- Presets Bar -->
+    <div class="presets-banner">
+      <div class="presets-label">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+        <span>Instant Test Cases:</span>
+      </div>
+      <div class="preset-buttons">
+        <button type="button" class="preset-chip" data-preset="diabetes">
+          <span>🩺 Polypharmacy & Diabetes</span>
+        </button>
+        <button type="button" class="preset-chip" data-preset="allergy">
+          <span>⚠️ Penicillin Allergy Emergency</span>
+        </button>
+        <button type="button" class="preset-chip" data-preset="pediatric">
+          <span>👶 Pediatric Vulnerability</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Scanner & Context Form View -->
+    <section class="scanner-section" id="scannerSection">
+      <form id="carePlanForm" class="grid-layout">
+        <!-- Left: Upload Column -->
+        <div class="card glass-card upload-column">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span class="step-num">1</span>
+              <h2>Prescription Photo</h2>
+            </div>
+            <span class="badge badge-info">JPEG, PNG, WEBP &bull; Max 5MB</span>
+          </div>
+
+          <!-- Drop Zone -->
+          <div class="drop-zone" id="dropZone">
+            <input type="file" id="fileInput" name="file" accept="image/jpeg,image/png,image/webp" class="file-input" required>
+            <div class="drop-zone-content" id="dropZonePrompt">
+              <div class="upload-icon-wrapper">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <p class="drop-primary-text">Drag & drop prescription or <span class="highlight-text">browse files</span></p>
+              <p class="drop-secondary-text">Snap doctor's prescription, medicine strip, or hospital discharge summary</p>
+            </div>
+
+            <!-- Image Preview Box -->
+            <div class="image-preview-wrapper hidden" id="previewWrapper">
+              <img id="imagePreview" alt="Prescription preview">
+              <div class="preview-overlay">
+                <span id="previewMeta" class="preview-meta-tag">2048 x 1536 &bull; 1.2 MB</span>
+                <button type="button" class="btn btn-danger btn-sm" id="removeImageBtn" title="Remove image">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="upload-footer-notice">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span><strong>Zero-Storage Sanitization:</strong> EXIF metadata & GPS coordinates are automatically stripped; payload is downscaled before AI inspection.</span>
+          </div>
+        </div>
+
+        <!-- Right: Patient Context Column -->
+        <div class="card glass-card context-column">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span class="step-num">2</span>
+              <h2>Patient Clinical Context</h2>
+            </div>
+            <span class="badge badge-success">Fail-Safe Cross-Check</span>
+          </div>
+
+          <div class="form-body">
+            <!-- Row: Age & Language -->
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="patientAge">Patient Age</label>
+                <div class="input-with-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  <input type="number" id="patientAge" placeholder="e.g. 68" min="0" max="120">
+                </div>
+              </div>
+
+              <div class="form-group flex-2">
+                <label for="preferredLanguage">Preferred Language (for explanation)</label>
+                <div class="input-with-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                  </svg>
+                  <select id="preferredLanguage">
+                    <option value="English">English</option>
+                    <option value="Hindi">Hindi (हिन्दी)</option>
+                    <option value="Spanish">Spanish (Español)</option>
+                    <option value="Bengali">Bengali (বাংলা)</option>
+                    <option value="Telugu">Telugu (తెలుగు)</option>
+                    <option value="Tamil">Tamil (தமிழ்)</option>
+                    <option value="Marathi">Marathi (मराठी)</option>
+                    <option value="French">French (Français)</option>
+                    <option value="Arabic">Arabic (العربية)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Allergies Tag Input -->
+            <div class="form-group">
+              <label for="allergiesInput">
+                Known Drug Allergies
+                <span class="label-hint">(Safety rule flags severe allergy clashes)</span>
+              </label>
+              <div class="tag-input-box" id="allergiesTagContainer">
+                <input type="text" id="allergiesInput" placeholder="Type allergy & press Enter (e.g. Penicillin, Sulfa)...">
+              </div>
+            </div>
+
+            <!-- Current Medicines Tag Input -->
+            <div class="form-group">
+              <label for="medicinesInput">
+                Current Ongoing Medications
+                <span class="label-hint">(Checks for accidental duplicate prescriptions)</span>
+              </label>
+              <div class="tag-input-box" id="medicinesTagContainer">
+                <input type="text" id="medicinesInput" placeholder="Type medication & press Enter (e.g. Metformin)...">
+              </div>
+            </div>
+
+            <!-- Known Conditions Tag Input -->
+            <div class="form-group">
+              <label for="conditionsInput">
+                Diagnosed Health Conditions
+                <span class="label-hint">(Optional clinical context)</span>
+              </label>
+              <div class="tag-input-box" id="conditionsTagContainer">
+                <input type="text" id="conditionsInput" placeholder="Type condition & press Enter (e.g. Type 2 Diabetes, Asthma)...">
+              </div>
+            </div>
+
+            <!-- Vulnerable Group Toggles -->
+            <div class="toggles-grid">
+              <label class="toggle-card">
+                <input type="checkbox" id="pregnantToggle">
+                <span class="toggle-switch"></span>
+                <span class="toggle-label">
+                  <strong>Pregnant or Breastfeeding</strong>
+                  <small>Enforces mandatory review for teratogenic risk</small>
+                </span>
+              </label>
+
+              <label class="toggle-card">
+                <input type="checkbox" id="childToggle">
+                <span class="toggle-switch"></span>
+                <span class="toggle-label">
+                  <strong>Pediatric Patient (&lt; 12 years)</strong>
+                  <small>Triggers pediatric weight/dose validation warning</small>
+                </span>
+              </label>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <span>Analyze Prescription & Build Care Plan</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- Loading State -->
+    <section class="loading-section hidden" id="loadingSection">
+      <div class="card glass-card loading-card">
+        <div class="pulse-ring-wrapper">
+          <div class="pulse-ring"></div>
+          <div class="pulse-core">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M12 2v20M2 12h20"/>
+            </svg>
+          </div>
+        </div>
+        <h3 class="loading-title" id="loadingTitle">Analyzing Prescription Image...</h3>
+        <p class="loading-desc" id="loadingDesc">Gemini Vision is inspecting medicine names, dosages, and instructions.</p>
+        
+        <div class="stepper-progress">
+          <div class="step-item active" id="step1">
+            <div class="step-dot"></div>
+            <span>Sanitize Image</span>
+          </div>
+          <div class="step-item" id="step2">
+            <div class="step-dot"></div>
+            <span>Multimodal OCR</span>
+          </div>
+          <div class="step-item" id="step3">
+            <div class="step-dot"></div>
+            <span>Safety Rule Engine</span>
+          </div>
+          <div class="step-item" id="step4">
+            <div class="step-dot"></div>
+            <span>Localized Schedule</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results Section (Care Plan View) -->
+    <section class="results-section hidden" id="resultsSection">
+      <!-- Action Bar -->
+      <div class="results-action-bar">
+        <button type="button" class="btn btn-secondary" id="backToScanBtn">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          Scan Another Prescription
+        </button>
+        <div class="action-buttons-group">
+          <button type="button" class="btn btn-secondary" id="exportPdfBtn">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            Print / Save PDF
+          </button>
+          <button type="button" class="btn btn-secondary" id="copyJsonBtn">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            Raw JSON
+          </button>
+        </div>
+      </div>
+
+      <!-- Human Review / Safety Alert Banner -->
+      <div class="safety-audit-banner" id="safetyAuditBanner">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Summary & Audio Card -->
+      <div class="card glass-card summary-card">
+        <div class="summary-header">
+          <div>
+            <div class="badge badge-emerald">Patient-Friendly Summary</div>
+            <h2 id="planLanguageTitle" class="mt-2">Plain Language Explanation</h2>
+          </div>
+          <!-- Text to Speech controls -->
+          <div class="tts-controller" id="ttsController">
+            <button type="button" class="btn btn-primary btn-sm" id="ttsPlayBtn">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              <span id="ttsBtnLabel">Listen Aloud</span>
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm hidden" id="ttsStopBtn">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <rect x="6" y="6" width="12" height="12"></rect>
+              </svg>
+              Stop
+            </button>
+          </div>
+        </div>
+        <p class="summary-text" id="patientFriendlySummaryText"></p>
+      </div>
+
+      <!-- Tabs: Medication Cards vs 24h Schedule -->
+      <div class="view-tabs">
+        <button type="button" class="view-tab active" data-tab="schedule">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          24-Hour Daily Schedule
+        </button>
+        <button type="button" class="view-tab" data-tab="medications">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.5 20.5l10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"></path>
+            <path d="m8.5 8.5 7 7"></path>
+          </svg>
+          Extracted Medications (<span id="medsCountBadge">0</span>)
+        </button>
+        <button type="button" class="view-tab" data-tab="safety">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          Safety Flags & Audit (<span id="safetyCountBadge">0</span>)
+        </button>
+      </div>
+
+      <!-- Tab Content 1: 24h Timeline -->
+      <div class="tab-content" id="tabSchedule">
+        <div class="schedule-timeline" id="scheduleTimeline">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Tab Content 2: Medication Cards -->
+      <div class="tab-content hidden" id="tabMedications">
+        <div class="medications-grid" id="medicationsGrid">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Tab Content 3: Safety Flags -->
+      <div class="tab-content hidden" id="tabSafety">
+        <div class="safety-flags-list" id="safetyFlagsList">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Guidance & Questions Row -->
+      <div class="grid-2-cols mt-4">
+        <div class="card glass-card">
+          <div class="card-header">
+            <h3>Missed Dose Guidance</h3>
+          </div>
+          <p id="missedDoseText" class="text-secondary"></p>
+        </div>
+
+        <div class="card glass-card">
+          <div class="card-header">
+            <h3>Questions for Your Doctor / Pharmacist</h3>
+          </div>
+          <ul id="followUpQuestionsList" class="questions-list"></ul>
+        </div>
+      </div>
+
+      <!-- Disclaimer Footer Card -->
+      <div class="disclaimer-card" id="disclaimerCard">
+        <div class="disclaimer-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <p id="medicalDisclaimerText"></p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Settings Modal -->
+  <div class="modal-backdrop hidden" id="configModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>API & Service Settings</h3>
+        <button type="button" class="btn btn-icon btn-secondary" id="closeModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="apiKeyInput">MediBridge Client API Key</label>
+          <input type="password" id="apiKeyInput" placeholder="e.g. change-me-1" value="change-me-1">
+          <small class="text-muted">Sent as X-API-Key header to authorize requests.</small>
+        </div>
+        <div class="form-group">
+          <label for="apiUrlInput">Backend Base URL</label>
+          <input type="text" id="apiUrlInput" placeholder="http://localhost:8000" value="">
+          <small class="text-muted">Leave blank when running through FastAPI server.</small>
+        </div>
+        <div class="form-group">
+          <label class="toggle-card">
+            <input type="checkbox" id="mockModeCheckbox">
+            <span class="toggle-switch"></span>
+            <span class="toggle-label">
+              <strong>Offline Mock Demo Mode</strong>
+              <small>Use authentic simulated responses without an active Gemini API key.</small>
+            </span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="saveConfigBtn">Save & Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
