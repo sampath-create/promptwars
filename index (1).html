@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- CSP: no inline-event handlers, no third-party scripts. connect-src = your backend only. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src blob: data:; connect-src http://localhost:* http://127.0.0.1:* https:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>MediBridge – prescription to daily schedule</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&family=Noto+Sans+Telugu:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#12263A; --ink-soft:#4A5B6C; --foil:#E8EDEF; --foil-deep:#CDD6DA; --paper:#FFFFFF;
+  --teal:#0B6F78; --teal-dark:#084F56; --amber:#F2B233; --amber-bg:#FFF4D6;
+  --red:#B3261E; --red-bg:#FDE7E5; --green:#1E7A4A; --green-bg:#E3F4EA;
+  --r-lg:28px; --r-md:14px; --r-sm:8px;
+  --font:"Atkinson Hyperlegible","Noto Sans Devanagari","Noto Sans Telugu",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{font-size:112.5%}
+body{margin:0;background:var(--foil);color:var(--ink);font-family:var(--font);line-height:1.55}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.skip{position:absolute;left:-999px}.skip:focus{left:8px;top:8px;background:var(--paper);padding:8px 12px;z-index:9}
+header{background:var(--ink);color:#fff;padding:18px clamp(16px,4vw,48px);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{width:44px;height:24px;border-radius:12px;background:linear-gradient(90deg,var(--teal) 50%,var(--paper) 50%);transform:rotate(-20deg);flex:none}
+header h1{font-size:1.4rem;margin:0;letter-spacing:.01em}
+header p{margin:0;color:#B9C6D2;font-size:.9rem}
+main{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:28px;padding:28px clamp(16px,4vw,48px);max-width:1280px;margin:0 auto}
+@media(max-width:860px){main{grid-template-columns:1fr}}
+.panel{background:var(--paper);border-radius:var(--r-md);padding:22px;box-shadow:0 1px 0 var(--foil-deep)}
+h2{font-size:1.2rem;margin:0 0 12px}
+h3{font-size:1.05rem;margin:0 0 6px}
+label,.lbl{display:block;font-weight:700;margin:14px 0 4px}
+.hint{font-weight:400;color:var(--ink-soft);font-size:.85rem}
+input[type=text],input[type=password],input[type=number],select{width:100%;font:inherit;padding:10px 12px;border:2px solid var(--foil-deep);border-radius:var(--r-sm);background:#fff;color:var(--ink)}
+input:focus,select:focus{border-color:var(--teal)}
+.check{display:flex;gap:10px;align-items:center;font-weight:400;margin:10px 0}
+.check input{width:22px;height:22px;accent-color:var(--teal)}
+.drop{display:grid;place-items:center;text-align:center;gap:6px;min-height:150px;border:3px dashed var(--foil-deep);border-radius:var(--r-md);padding:14px;cursor:pointer;background:var(--foil)}
+.drop:hover,.drop.over{border-color:var(--teal);background:#F2FAFA}
+.drop img{max-width:100%;max-height:220px;border-radius:var(--r-sm)}
+.drop input{position:absolute;opacity:0;width:1px;height:1px}
+.drop:focus-within{outline:3px solid var(--ink);outline-offset:2px}
+button{font:inherit;font-weight:700;border:0;border-radius:999px;padding:13px 24px;cursor:pointer;background:var(--teal);color:#fff;min-height:48px}
+button:hover{background:var(--teal-dark)}
+button.ghost{background:transparent;color:var(--teal-dark);border:2px solid var(--teal)}
+button.ghost:hover{background:#E6F3F4}
+button[disabled]{opacity:.55;cursor:wait}
+details{margin-top:18px;border-top:2px solid var(--foil);padding-top:12px}
+summary{cursor:pointer;font-weight:700}
+.err{background:var(--red-bg);color:var(--red);border-left:6px solid var(--red);padding:12px 14px;border-radius:var(--r-sm);margin-top:14px;font-weight:700}
+.empty{display:grid;place-items:center;text-align:center;min-height:320px;color:var(--ink-soft)}
+.empty .blister{display:flex;gap:10px;margin-bottom:14px}
+.empty .blister i{width:34px;height:34px;border-radius:50%;background:var(--foil);box-shadow:inset 2px 3px 5px var(--foil-deep)}
+.banner{border-radius:var(--r-md);padding:14px 16px;margin-bottom:18px;font-weight:700}
+.banner.review{background:var(--amber-bg);border-left:8px solid var(--amber)}
+.banner.ok{background:var(--green-bg);border-left:8px solid var(--green)}
+.banner ul{margin:6px 0 0;padding-left:20px;font-weight:400}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 4px}
+/* Blister strip: schedule as foil pack cavities */
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;background:var(--foil);padding:16px;border-radius:var(--r-lg);margin:12px 0 22px;box-shadow:inset 0 2px 6px var(--foil-deep)}
+.slot{background:var(--paper);border-radius:var(--r-lg);padding:14px;display:grid;gap:6px;justify-items:start;box-shadow:0 2px 0 var(--foil-deep)}
+.pill{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.8rem;color:var(--ink);box-shadow:inset -4px -5px 8px rgba(0,0,0,.14);opacity:0;transform:scale(.4);animation:pop .45s cubic-bezier(.3,1.6,.5,1) forwards;animation-delay:calc(var(--i)*140ms)}
+.p-morning{background:#FFD36B}.p-afternoon{background:#9ADBD6}.p-evening{background:#F4A38C}.p-night{background:#A9B7F0}
+.slot .time{font-size:1.5rem;font-weight:700;line-height:1}
+.slot .meds{font-weight:700}
+.slot p{margin:0;font-size:.95rem}
+@keyframes pop{to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.pill{animation:none;opacity:1;transform:none}}
+.meds-grid{display:grid;gap:14px}
+.med{border:2px solid var(--foil-deep);border-radius:var(--r-md);padding:16px}
+.med dl{display:grid;grid-template-columns:auto 1fr;gap:2px 14px;margin:10px 0}
+.med dt{color:var(--ink-soft)}.med dd{margin:0;font-weight:700}
+.src{background:var(--foil);border-radius:var(--r-sm);padding:6px 10px;font-size:.85rem;color:var(--ink-soft);overflow-wrap:anywhere}
+.warn{margin:8px 0 0;padding-left:20px}
+.flag{border-radius:var(--r-md);padding:12px 14px;margin:10px 0;border-left:8px solid}
+.flag b{display:inline-block;margin-right:6px}
+.sev-low{background:var(--foil);border-color:var(--ink-soft)}
+.sev-medium{background:var(--amber-bg);border-color:var(--amber)}
+.sev-high{background:var(--red-bg);border-color:var(--red)}
+.sev-emergency{background:var(--red);color:#fff;border-color:var(--ink)}
+section.block{margin-top:26px}
+.disc{font-size:.85rem;color:var(--ink-soft);border-top:2px solid var(--foil);padding-top:12px;margin-top:26px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<a class="skip" href="#results">Skip to results</a>
+<header>
+  <div class="logo" aria-hidden="true"></div>
+  <div>
+    <h1>MediBridge</h1>
+    <p>Photo of a prescription in. Clear daily medicine schedule out.</p>
+  </div>
+</header>
+
+<main>
+  <form class="panel" id="form" novalidate aria-labelledby="formTitle">
+    <h2 id="formTitle">Read a prescription</h2>
+
+    <span class="lbl" id="fileLbl">Prescription or medicine photo</span>
+    <label class="drop" id="drop" for="file">
+      <input type="file" id="file" accept="image/jpeg,image/png,image/webp" aria-describedby="fileLbl">
+      <span id="dropText"><b>Choose a photo</b><br><span class="hint">or drop it here. JPEG, PNG or WEBP, up to 5 MB. Use good light, no blur.</span></span>
+    </label>
+
+    <label for="lang">Language for the explanation</label>
+    <select id="lang">
+      <option value="English">English</option><option value="Hindi">हिन्दी (Hindi)</option>
+      <option value="Telugu">తెలుగు (Telugu)</option><option value="Tamil">தமிழ் (Tamil)</option>
+      <option value="Kannada">ಕನ್ನಡ (Kannada)</option><option value="Bengali">বাংলা (Bengali)</option>
+      <option value="Marathi">मराठी (Marathi)</option>
+    </select>
+
+    <label for="age">Age <span class="hint">(optional)</span></label>
+    <input type="number" id="age" min="0" max="120" inputmode="numeric">
+
+    <label for="cond">Health conditions <span class="hint">(separate with commas)</span></label>
+    <input type="text" id="cond" maxlength="400" placeholder="Type 2 diabetes, high blood pressure">
+
+    <label for="allergy">Allergies <span class="hint">(separate with commas)</span></label>
+    <input type="text" id="allergy" maxlength="400" placeholder="Penicillin">
+
+    <label for="current">Medicines already taken <span class="hint">(separate with commas)</span></label>
+    <input type="text" id="current" maxlength="600" placeholder="Metformin, Telmisartan">
+
+    <label class="check"><input type="checkbox" id="preg"> Pregnant or breastfeeding</label>
+    <label class="check"><input type="checkbox" id="child"> Patient is a child</label>
+
+    <div class="toolbar"><button type="submit" id="go">Create schedule</button></div>
+    <div id="formErr" role="alert"></div>
+
+    <details>
+      <summary>Connection settings</summary>
+      <label class="check"><input type="checkbox" id="demo" checked> Demo mode (sample result, no server needed)</label>
+      <label for="api">Server address</label>
+      <input type="text" id="api" value="http://localhost:8000" autocomplete="off">
+      <label for="key">Access key <span class="hint">(kept in this tab only)</span></label>
+      <input type="password" id="key" autocomplete="off">
+    </details>
+  </form>
+
+  <section class="panel" id="results" tabindex="-1" aria-live="polite" aria-label="Results">
+    <div class="empty" id="empty">
+      <div>
+        <div class="blister" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <p><b>Add a prescription photo</b><br>Your daily schedule will appear here.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const MAX_BYTES = 5 * 1024 * 1024, TYPES = ["image/jpeg", "image/png", "image/webp"];
+const SPEECH = {English:"en-IN",Hindi:"hi-IN",Telugu:"te-IN",Tamil:"ta-IN",Kannada:"kn-IN",Bengali:"bn-IN",Marathi:"mr-IN"};
+let file = null, previewUrl = null;
+
+/* SECURITY: model output is untrusted. Build DOM with textContent only. Never innerHTML. */
+function h(tag, props = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "class") e.className = v; else e.setAttribute(k, v);
+  }
+  kids.flat().forEach(k => { if (k != null && k !== "") e.append(k.nodeType ? k : String(k)); });
+  return e;
+}
+
+/* ---------- file selection ---------- */
+function setFile(f) {
+  $("#formErr").replaceChildren();
+  if (!f) return;
+  if (!TYPES.includes(f.type)) return showErr("Use a JPEG, PNG or WEBP photo.");
+  if (f.size > MAX_BYTES) return showErr("Photo is bigger than 5 MB. Take a smaller photo.");
+  file = f;
+  if (previewUrl) URL.revokeObjectURL(previewUrl);
+  previewUrl = URL.createObjectURL(f);
+  const img = h("img", {src: previewUrl, alt: "Selected prescription photo"});
+  $("#dropText").replaceChildren(img, h("br"), h("span", {class: "hint"}, "Tap to choose a different photo."));
+}
+$("#file").addEventListener("change", e => setFile(e.target.files[0]));
+const drop = $("#drop");
+["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => setFile(e.dataTransfer.files[0]));
+
+function showErr(msg) { $("#formErr").replaceChildren(h("div", {class: "err"}, msg)); }
+const list = (id, max) => $(id).value.split(",").map(s => s.trim().slice(0, 100)).filter(Boolean).slice(0, max);
+
+/* ---------- submit ---------- */
+$("#form").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (!file && !$("#demo").checked) return showErr("Add a prescription photo first.");
+  const ageVal = $("#age").value.trim();
+  const context = {
+    age: ageVal === "" ? null : Math.min(120, Math.max(0, parseInt(ageVal, 10) || 0)),
+    preferred_language: $("#lang").value,
+    conditions: list("#cond", 20), allergies: list("#allergy", 20), current_medicines: list("#current", 30),
+    pregnant_or_breastfeeding: $("#preg").checked, patient_is_child: $("#child").checked
+  };
+  const btn = $("#go"); btn.disabled = true; btn.textContent = "Reading prescription…";
+  $("#formErr").replaceChildren();
+  try {
+    const data = $("#demo").checked ? await demo(context) : await callApi(context);
+    render(data, context);
+    $("#results").focus();
+  } catch (err) {
+    showErr(err.userMessage || "Something went wrong. Try again.");
+  } finally { btn.disabled = false; btn.textContent = "Create schedule"; }
+});
+
+async function callApi(context) {
+  const base = $("#api").value.trim().replace(/\/+$/, "");
+  const key = $("#key").value;
+  if (!/^https?:\/\//.test(base)) throw {userMessage: "Server address must start with http:// or https://"};
+  if (!key) throw {userMessage: "Enter the access key under Connection settings."};
+  const fd = new FormData();
+  fd.append("file", file); fd.append("context", JSON.stringify(context));
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 60000);
+  let res;
+  try { res = await fetch(base + "/v1/care-plan", {method: "POST", headers: {"X-API-Key": key}, body: fd, signal: ctl.signal}); }
+  catch { throw {userMessage: "Cannot reach the server. Check the address and that it is running."}; }
+  finally { clearTimeout(t); }
+  if (!res.ok) {
+    const map = {401: "Access key is wrong or missing.", 413: "Photo is too large.", 415: "Photo type not supported. Use JPEG, PNG or WEBP.",
+      422: "Some details were not accepted. Check age and language.", 429: "Too many requests. Wait a minute and try again.",
+      502: "The prescription could not be read safely. Upload a clearer photo.", 504: "The AI service took too long. Try again."};
+    throw {userMessage: map[res.status] || "Server error. Try again."};
+  }
+  return res.json();
+}
+
+/* ---------- rendering ---------- */
+const PERIODS = [[12, "morning", "Morning"], [17, "afternoon", "Afternoon"], [21, "evening", "Evening"], [99, "night", "Night"]];
+const period = t => { const hr = parseInt(t, 10); return PERIODS.find(p => hr < p[0]) || PERIODS[3]; };
+const SEV = {low: "Note", medium: "Check", high: "Important", emergency: "Emergency"};
+const FOOD = {before_food: "Before food", after_food: "After food", with_food: "With food", empty_stomach: "Empty stomach", no_restriction: "Any time", unclear: "Not clear"};
+
+function render(data, context) {
+  const p = data.care_plan, root = $("#results");
+  const out = [];
+
+  out.push(data.requires_human_review
+    ? h("div", {class: "banner review", role: "status"}, "A pharmacist or health worker should check this before you rely on it.",
+        h("ul", {}, (data.review_reasons || []).map(r => h("li", {}, r))))
+    : h("div", {class: "banner ok", role: "status"}, "No problems found by automatic checks. Still confirm with your pharmacist."));
+
+  out.push(h("h2", {}, "Your day"));
+  out.push(h("p", {}, p.patient_friendly_summary));
+  const bar = h("div", {class: "toolbar"});
+  const speak = h("button", {type: "button", class: "ghost"}, "Read aloud");
+  speak.addEventListener("click", () => toggleSpeech(speak, p, context.preferred_language));
+  const print = h("button", {type: "button", class: "ghost"}, "Print");
+  print.addEventListener("click", () => window.print());
+  bar.append(speak, print); out.push(bar);
+
+  if (p.extraction_confidence !== "high" || (p.unreadable_or_missing_fields || []).length)
+    out.push(h("div", {class: "flag sev-medium"}, h("b", {}, "Photo not fully clear."),
+      "Upload a clearer photo. Unclear: " + ((p.unreadable_or_missing_fields || []).join(", ") || "some details")));
+
+  const strip = h("div", {class: "strip", role: "list", "aria-label": "Daily schedule"});
+  (p.daily_schedule || []).slice().sort((a, b) => a.time.localeCompare(b.time)).forEach((s, i) => {
+    const [, cls, label] = period(s.time);
+    const slot = h("div", {class: "slot", role: "listitem", style: "--i:" + i},
+      h("div", {class: "pill p-" + cls, "aria-hidden": "true"}, label.slice(0, 3)),
+      h("div", {class: "time"}, s.time), h("div", {class: "meds"}, (s.medicines || []).join(", ")),
+      h("p", {}, s.instruction));
+    strip.append(slot);
+  });
+  out.push(strip);
+
+  out.push(h("section", {class: "block"}, h("h2", {}, "Medicines"),
+    h("div", {class: "meds-grid"}, (p.medications || []).map(m => h("article", {class: "med"},
+      h("h3", {}, m.medicine_name + (m.strength ? " " + m.strength : "")),
+      h("p", {}, m.plain_language_purpose),
+      h("dl", {},
+        h("dt", {}, "Dose"), h("dd", {}, m.dose), h("dt", {}, "How often"), h("dd", {}, m.frequency + " – " + m.timing),
+        h("dt", {}, "Food"), h("dd", {}, FOOD[m.food_instruction] || "Not clear"),
+        h("dt", {}, "For"), h("dd", {}, m.duration || "Not stated")),
+      (m.important_warnings || []).length ? h("ul", {class: "warn"}, m.important_warnings.map(w => h("li", {}, w))) : "",
+      h("p", {class: "src"}, "Written on photo: " + m.source_text_from_image))))));
+
+  if ((p.potential_safety_flags || []).length)
+    out.push(h("section", {class: "block"}, h("h2", {}, "Safety checks"),
+      p.potential_safety_flags.map(f => h("div", {class: "flag sev-" + (SEV[f.severity] ? f.severity : "low")},
+        h("b", {}, SEV[f.severity] || "Note") , f.issue, h("br"), h("b", {}, "What to do:"), f.recommended_action))));
+
+  out.push(h("section", {class: "block"}, h("h2", {}, "If you miss a dose"), h("p", {}, p.missed_dose_guidance)));
+
+  if (p.caregiver_alert_needed)
+    out.push(h("section", {class: "block"}, h("h2", {}, "Caregiver message (waiting for approval)"),
+      h("p", {}, p.caregiver_alert_message), h("p", {class: "hint"}, "This is not sent until a health worker approves it.")));
+
+  if ((p.follow_up_questions_for_patient || []).length)
+    out.push(h("section", {class: "block"}, h("h2", {}, "Questions to answer"),
+      h("ul", {}, p.follow_up_questions_for_patient.map(q => h("li", {}, q)))));
+
+  out.push(h("p", {class: "disc"}, p.medical_disclaimer, " Request ID: " + (data.request_id || "demo")));
+  root.replaceChildren(...out);
+}
+
+/* ---------- read aloud ---------- */
+function toggleSpeech(btn, plan, lang) {
+  const s = window.speechSynthesis;
+  if (!s) return;
+  if (s.speaking) { s.cancel(); btn.textContent = "Read aloud"; return; }
+  const text = [plan.patient_friendly_summary, ...(plan.daily_schedule || []).map(x => x.reminder_message)].join(" ");
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = SPEECH[lang] || "en-IN"; u.rate = 0.9;
+  u.onend = u.onerror = () => { btn.textContent = "Read aloud"; };
+  btn.textContent = "Stop reading"; s.speak(u);
+}
+
+/* ---------- demo data (matches backend response shape) ---------- */
+async function demo(ctx) {
+  await new Promise(r => setTimeout(r, 900));
+  const med = (name, strength, purpose, plain, warn, src) => ({medicine_name: name, strength, form: "tablet", dose: "1 tablet",
+    frequency: "Twice daily", timing: "Morning and evening", duration: "30 days", food_instruction: "after_food",
+    purpose_if_stated: purpose, plain_language_purpose: plain, important_warnings: warn, source_text_from_image: src});
+  return {
+    request_id: "demo",
+    requires_human_review: true,
+    review_reasons: ["Demo data: sample only, not from your photo"],
+    care_plan: {
+      extraction_confidence: "high", unreadable_or_missing_fields: [],
+      patient_friendly_summary: "You have two medicines. Take both after food, in the morning and in the evening.",
+      medications: [
+        med("Metformin", "500 mg", "Diabetes", "This medicine helps control blood sugar.", ["Do not skip meals.", "Tell a doctor if you feel very weak, vomit, or have stomach pain."], "Tab Metformin 500 mg BD after food x 30 days"),
+        med("Telmisartan", "40 mg", "BP", "This medicine helps keep blood pressure down.", ["Stand up slowly. Tell a doctor if you feel dizzy."], "Tab Telmisartan 40 mg BD a/f x 30 d")],
+      daily_schedule: [
+        {time: "08:30", medicines: ["Metformin 500 mg", "Telmisartan 40 mg"], instruction: "Take 1 tablet of each after breakfast.", reminder_message: "Good morning. Please take your Metformin and Telmisartan after breakfast."},
+        {time: "20:30", medicines: ["Metformin 500 mg", "Telmisartan 40 mg"], instruction: "Take 1 tablet of each after dinner.", reminder_message: "It is time for your evening tablets. Please take them after dinner."}],
+      missed_dose_guidance: "If you miss a dose, do not take two together. Take the next dose at the usual time. Ask your pharmacist if you miss doses often.",
+      potential_safety_flags: [{severity: "low", issue: "You already take these medicines. Is this the same prescription or a change?", recommended_action: "Ask your doctor or pharmacist to confirm."}],
+      caregiver_alert_needed: false, caregiver_alert_message: "",
+      follow_up_questions_for_patient: ["Is it hard to swallow tablets?", "Did you miss any doses this week?", "Any dizziness, vomiting or weakness lately?"],
+      medical_disclaimer: "MediBridge gives medication reminders and simple information. It does not replace advice from a doctor, pharmacist, or emergency service."
+    }
+  };
+}
+</script>
+</body>
+</html>
